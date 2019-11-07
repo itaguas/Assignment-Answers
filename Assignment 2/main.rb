@@ -15,7 +15,7 @@ puts puts puts
 
 $interaction_hash = {} #Hash that contains all the genes that have interactions as keys, and an array with their interactions as values
 $genes_from_list = [] #Array containing all the genes of the list
-File.readlines("./ASN_G.txt").each do |line|
+File.readlines("./ArabidopsisSubNetwork_GeneList.txt").each do |line|
   line = line.delete_suffix("\n")
   $genes_from_list |= [line.upcase]
   ghash = {:gene_id => line.upcase}
