@@ -1,0 +1,181 @@
+UNIPROT QUERIES (https://sparql.uniprot.org/sparql/)
+
+Prefixes used:
+  PREFIX up:<http://purl.uniprot.org/core/> 
+  PREFIX taxon:<http://purl.uniprot.org/taxonomy/>
+  PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+  PREFIX xsd:<http://www.w3.org/2001/XMLSchema#>
+  PREFIX rdfs:<http://www.w3.org/2000/01/rdf-schema#> 
+  PREFIX uniprotkb:<http://purl.uniprot.org/uniprot/> 
+  PREFIX skos:<http://www.w3.org/2004/02/skos/core#>
+
+1.  How many protein records are in UniProt? 
+
+      QUERY:
+        SELECT (COUNT(DISTINCT ?protein) AS ?proteins) 
+        WHERE {
+          ?protein a up:Protein
+         }
+         
+      ANSWER: 281.303.435
+
+
+
+2.  How many Arabidopsis thaliana protein records are in UniProt?
+
+      QUERY:
+        SELECT (COUNT(DISTINCT ?protein) AS ?proteins)
+        WHERE {
+          ?protein up:organism taxon:3702 .
+          ?protein rdf:type up:Protein
+        }
+  
+      ANSWER: 89.182
+
+
+3.  What is the description of the enzyme activity of UniProt Protein Q9SZZ8
+
+      QUERY:
+        SELECT ?act_desc
+        WHERE {
+	        uniprotkb:Q9SZZ8 up:enzyme ?enzyme.
+	        ?enzyme up:activity ?activity.
+    	    ?activity rdfs:label ?act_desc
+        }
+  
+      ANSWER: Beta-carotene + 4 reduced ferredoxin [iron-sulfur] cluster + 2 H(+) + 2 O(2) = zeaxanthin + 4 oxidized ferredoxin [iron-sulfur] cluster + 2 H(2)O.
+      
+      
+4.  Retrieve the proteins ids, and date of submission, for proteins that have been added to UniProt this year
+
+      QUERY:
+        SELECT DISTINCT ?id ?date
+          WHERE {
+            ?prot rdf:type up:Protein .
+            ?prot up:mnemonic ?id .
+            ?prot up:created ?date .
+            FILTER (?date >= "2019-01-01"^^xsd:dateTime)
+          }
+
+      ANSWER: a list containing 58.202.805 rows and 2 columns (id and date)
+ 
+5.  How many species are in the UniProt taxonomy?
+
+      QUERY:
+        SELECT (COUNT (DISTINCT ?sp) AS ?Species)
+        WHERE {
+          ?sp up:rank up:Species .
+        }
+
+      ANSWER: 1.766.921
+
+
+
+6.  How many species have at least one protein record?
+
+      QUERY:
+        SELECT (COUNT (DISTINCT ?sp) AS ?Species)
+        WHERE {
+          ?sp up:rank up:Species .
+          ?protein rdf:type up:Protein .
+          ?protein up:organism ?sp
+        }
+
+      ANSWER: 984.622
+
+
+
+7.  Find the AGI codes and gene names for all Arabidopsis thaliana  proteins that have a protein function annotation description that mentions “pattern formation”
+
+      QUERY:
+        SELECT ?agi ?name
+        WHERE {
+          ?protein up:organism taxon:3702 .
+          ?protein rdf:type up:Protein .
+          ?protein up:annotation ?prot_annotation .
+          ?prot_annotation rdf:type up:Function_Annotation .
+          ?prot_annotation rdfs:comment ?prot_annotation_comment
+          FILTER CONTAINS (?prot_annotation_comment, "pattern formation") .
+          ?protein up:encodedBy ?gene .
+          ?gene up:locusName ?agi .
+          ?gene skos:prefLabel ?name
+        }
+
+      ANSWER: a list containing 15 rows and 2 columns (AGI code and name)
+ 
+ 
+
+ATLAS GENE EXPRESSION DATABASE QUERIES (http://www.ebi.ac.uk/rdf/services/atlas/sparql)
+
+Prefixes used:
+  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  PREFIX atlasterms: <http://rdf.ebi.ac.uk/terms/expressionatlas/>
+
+  
+8.  Get the experimental description for all experiments where the Arabidopsis Apetala3 gene is DOWN regulated
+
+      QUERY:
+        SELECT distinct ?descr
+        WHERE {            
+          ?gene rdfs:label 'AP3' .
+          ?exp atlasterms:refersTo ?gene .
+          ?exp a atlasterms:DecreasedDifferentialExpressionRatio .
+          ?exp rdfs:label ?descr
+        }
+
+
+      ANSWER: a list containing 15 rows and 1 columns (the description of the experiments)
+
+
+
+REACTOME DATABASE QUERIES (http://www.ebi.ac.uk/rdf/services/reactome/sparql)
+
+Prefixes used:
+  PREFIX tax:<http://identifiers.org/taxonomy/> 
+  PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+  PREFIX biopax3: <http://www.biopax.org/release/biopax-level3.owl#>
+  
+9.  How many REACTOME pathways are assigned to Arabidopsis (taxon 3702)?
+
+      QUERY:
+        SELECT (COUNT (DISTINCT ?path) AS ?Pathway)
+        WHERE {
+          ?path rdf:type biopax3:Pathway .
+          ?path biopax3:organism tax:3702
+        }
+
+      ANSWER: 809
+
+
+
+10.  Get all PubMed references for the pathway with the name “Degradation of the extracellular matrix”
+
+      QUERY:
+        SELECT ?ref
+        WHERE {
+          ?path rdf:type biopax3:Pathway .
+          ?path biopax3:displayName ?name .
+          FILTER CONTAINS(STR(?name),'Degradation of the extracellular matrix') .
+          ?path biopax3:xref ?ref .
+          ?ref biopax3:db ?db .
+          FILTER(str(?db) ='Pubmed') 
+        }
+
+      ANSWER: a list containing 7 rows and 1 column (the PubMed references)
+ 
+
+
+11.  Write a query that proves that all Arabidopsis pathway annotations in Reactome are “inferred from electronic annotation” (evidence code)
+
+      QUERY:
+        SELECT (COUNT(DISTINCT ?path) as ?Evidences)
+        WHERE {
+          ?path rdf:type biopax3:Pathway .
+          ?path biopax3:organism tax:3702 .
+          ?path biopax3:evidence ?ev .
+          ?ev biopax3:evidenceCode ?evcode .
+          ?evcode biopax3:term ?term .
+          FILTER CONTAINS(STR(?term), 'inferred from electronic annotation')
+        }
+
+      ANSWER: 809 (the same number obtained in question 9)
